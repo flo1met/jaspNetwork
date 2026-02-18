@@ -337,6 +337,9 @@ BayesianNetworkAnalysis <- function(jaspResults, dataset, options) {
           .quitAnalysis(gettext("Some of the variables you have entered for analysis are not binary or ordinal. Please make sure that all variables are binary or ordinal or change the model to gcgm."))
         }
       }
+
+      var_types <- get_variable_type(options)
+
       # Estimate network
       jaspBase::.setSeedJASP(options)
       easybgmFit <- try(easybgm::easybgm(data       = dataset[[nw]],
@@ -354,7 +357,9 @@ BayesianNetworkAnalysis <- function(jaspResults, dataset, options) {
                                          main_beta        = options[["thresholdBeta"]],
                                          beta_bernoulli_alpha  = options[["betaAlpha"]],
                                          beta_bernoulli_beta   = options[["betaBeta"]],
-                                         dirichlet_alpha       = options[["dirichletAlpha"]]))
+                                         dirichlet_alpha       = options[["dirichletAlpha"]],
+                                         variable_type = var_types,
+                                         baseline_category = 2))
 
 
 
@@ -1304,4 +1309,21 @@ centrality <- function(network, measures = c("closeness", "betweenness", "streng
   centralityOutput$posteriorMeans <- ifelse(is.na(centralityOutput$posteriorMeans), 0, centralityOutput$posteriorMeans)
 
   return(centralityOutput)
+}
+
+# Create variable_type
+get_variable_type <- function(options) {
+  vars <- options[["variables"]]
+  v_types <- character(length(vars))
+
+  for (i in seq_along(vars)) {
+    var_name <- vars[i]
+
+    if (var_name %in% options[["variablesBlumeCapel"]]) {
+      v_types[i] <- "blume-capel"
+    } else {
+      v_types[i] <- "ordinal" # defaults to ordinal
+    }
+  }
+  return(v_types)
 }
