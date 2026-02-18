@@ -339,6 +339,7 @@ BayesianNetworkAnalysis <- function(jaspResults, dataset, options) {
       }
 
       var_types <- get_variable_type(options)
+      baseline_cats <- get_baseline_categories(options, dataset[[nw]])
 
       # Estimate network
       jaspBase::.setSeedJASP(options)
@@ -359,7 +360,7 @@ BayesianNetworkAnalysis <- function(jaspResults, dataset, options) {
                                          beta_bernoulli_beta   = options[["betaBeta"]],
                                          dirichlet_alpha       = options[["dirichletAlpha"]],
                                          variable_type = var_types,
-                                         baseline_category = 2))
+                                         baseline_category = baseline_cats))
 
 
 
@@ -1316,14 +1317,51 @@ get_variable_type <- function(options) {
   vars <- options[["variables"]]
   v_types <- character(length(vars))
 
+  # Extract Blume-Capel variable names from the list of lists
+  bc_vars <- character(0)
+  if (length(options[["variablesBlumeCapel"]]) > 0) {
+    bc_vars <- vapply(options[["variablesBlumeCapel"]], `[[`, character(1L), "variable")
+  }
+
   for (i in seq_along(vars)) {
     var_name <- vars[i]
 
-    if (var_name %in% options[["variablesBlumeCapel"]]) {
+    if (var_name %in% bc_vars) {
       v_types[i] <- "blume-capel"
     } else {
       v_types[i] <- "ordinal" # defaults to ordinal
     }
   }
   return(v_types)
+}
+
+# Extract baseline categories for Blume-Capel variables
+# Returns a vector of length p (number of variables) as required by bgms.
+# Non-Blume-Capel variables get a default value of 1 (ignored by bgms for ordinal types).
+# Because JASP stores variables as factors and bgms internally calls data.matrix()
+# (which converts factor levels to 1-based integer codes), we must use
+# match(label, levels(factor)) to obtain the correct integer code rather than
+# as.integer(label), which would give the numeric value of the label string.
+get_baseline_categories <- function(options, data) {
+  vars <- options[["variables"]]
+  p <- length(vars)
+
+  if (length(options[["variablesBlumeCapel"]]) == 0) {
+    return(rep(1L, p))
+  }
+
+  bc_names <- vapply(options[["variablesBlumeCapel"]], `[[`, character(1L), "variable")
+  bc_levels <- vapply(options[["variablesBlumeCapel"]], `[[`, character(1L), "levels")
+
+  # Build a full-length vector; default to 1 for non-Blume-Capel variables
+  baseline_categories <- rep(1L, p)
+  names(baseline_categories) <- vars
+
+  for (j in seq_along(bc_names)) {
+    # match() returns the position of the selected level in the factor levels,
+    # which equals the integer code that data.matrix() will produce.
+    baseline_categories[bc_names[j]] <- match(bc_levels[j], levels(data[[bc_names[j]]]))
+  }
+
+  return(baseline_categories)
 }

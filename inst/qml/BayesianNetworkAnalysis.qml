@@ -154,7 +154,7 @@ Form
 				enabled: model.currentValue === "omrf"
 				name: "variablesBlumeCapel";
 				title: qsTr("Blume Capel Variables");
-				info: qsTr("Variables treated as Blume-Capel variables in the OMFR model. These are ordinal variables that have a neutral category.");
+				info: qsTr("Variables treated as Blume-Capel variables in the OMRF model. These are ordinal variables that have a neutral category.");
 				allowedColumns: ["ordinal"];
 				allowTypeChange: true;
 				rowComponent: DropDown
