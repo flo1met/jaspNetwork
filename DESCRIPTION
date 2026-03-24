@@ -31,7 +31,7 @@ Imports:
 Remotes:
   jasp-stats/jaspBase,
   jasp-stats/jaspGraphs,
-  KarolineHuth/easybgm,
+  Bayesian-Graphical-Modelling-Lab/easybgm,
   KarolineHuth/BDgraph
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
