@@ -322,7 +322,7 @@ msgstr "Opcións de Análise - "
 
 msgctxt "NetworkAnalysis|"
 msgid "Continuous Variables"
-msgstr "Variables Continuas"
+msgstr "Variables continuas"
 
 msgctxt "NetworkAnalysis|"
 msgid "Rainbow"
