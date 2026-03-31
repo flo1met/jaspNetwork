@@ -54,6 +54,7 @@ BayesianNetworkAnalysis <- function(jaspResults, dataset, options) {
                                                           "dirichletAlpha", "thresholdAlpha", "thresholdBeta",
                                                           "chains", "omrfUpdateMethod",
                                                           "variablesBlumeCapel"))
+
     jaspResults[["mainContainer"]] <- mainContainer
   }
   .bayesianNetworkAnalysisMainTableMeta(mainContainer, dataset, options)
@@ -361,9 +362,9 @@ BayesianNetworkAnalysis <- function(jaspResults, dataset, options) {
                                          chains     = as.integer(options[["chains"]]),
                                          update_method = options[["omrfUpdateMethod"]],
                                          inclusion_probability         = options[["gPrior"]],
-                                         pairwise_scale                = options[["interactionScale"]],
+                                         pairwise_scale                = options[["interactionScale"]], # changed name
                                          edge_prior                    = options[["edgePrior"]],
-                                         main_alpha                    = options[["thresholdAlpha"]],
+                                         main_alpha                    = options[["thresholdAlpha"]], # changed name
                                          main_beta                     = options[["thresholdBeta"]],
                                          beta_bernoulli_alpha          = options[["betaAlpha"]],
                                          beta_bernoulli_beta           = options[["betaBeta"]],
