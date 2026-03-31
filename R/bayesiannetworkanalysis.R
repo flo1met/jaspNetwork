@@ -52,7 +52,8 @@ BayesianNetworkAnalysis <- function(jaspResults, dataset, options) {
                                                           "burnin", "iter", "gPrior", "dfPrior", "initialConfiguration",
                                                           "edgePrior", "interactionScale", "betaAlpha", "betaBeta",
                                                           "dirichletAlpha", "thresholdAlpha", "thresholdBeta",
-                                                          "chains", "omrfUpdateMethod"))
+                                                          "chains", "omrfUpdateMethod",
+                                                          "variablesBlumeCapel"))
     jaspResults[["mainContainer"]] <- mainContainer
   }
   .bayesianNetworkAnalysisMainTableMeta(mainContainer, dataset, options)
@@ -345,6 +346,9 @@ BayesianNetworkAnalysis <- function(jaspResults, dataset, options) {
           .quitAnalysis(gettext("Some of the variables you have entered for analysis are not binary or ordinal. Please make sure that all variables are binary or ordinal or change the model to gcgm."))
         }
       }
+
+      bc_spec <- get_blume_capel_spec(options, dataset[[nw]])
+
       # Estimate network
       jaspBase::.setSeedJASP(options)
       easybgmFit <- try(easybgm::easybgm(data       = dataset[[nw]],
@@ -357,16 +361,18 @@ BayesianNetworkAnalysis <- function(jaspResults, dataset, options) {
                                          chains     = as.integer(options[["chains"]]),
                                          update_method = options[["omrfUpdateMethod"]],
                                          inclusion_probability         = options[["gPrior"]],
-                                         pairwise_scale                = options[["interactionScale"]], # changed name
+                                         pairwise_scale                = options[["interactionScale"]],
                                          edge_prior                    = options[["edgePrior"]],
-                                         main_alpha                    = options[["thresholdAlpha"]], # changed name
+                                         main_alpha                    = options[["thresholdAlpha"]],
                                          main_beta                     = options[["thresholdBeta"]],
                                          beta_bernoulli_alpha          = options[["betaAlpha"]],
                                          beta_bernoulli_beta           = options[["betaBeta"]],
                                          beta_bernoulli_alpha_between  = options[["betaAlpha_between"]],
                                          beta_bernoulli_beta_between   = options[["betaBeta_between"]],
                                          lambda                        = options[["lambda"]],
-                                         dirichlet_alpha               = options[["dirichletAlpha"]]))
+                                         dirichlet_alpha               = options[["dirichletAlpha"]],
+                                         variable_type                 = bc_spec$variable_type,
+                                         baseline_category             = bc_spec$baseline_category))
 
 
 
@@ -1678,4 +1684,35 @@ centrality <- function(network, measures = c("closeness", "betweenness", "streng
   centralityOutput$posteriorMeans <- ifelse(is.na(centralityOutput$posteriorMeans), 0, centralityOutput$posteriorMeans)
 
   return(centralityOutput)
+}
+
+# Build variable_type and baseline_category vectors for the Blume-Capel / OMRF model.
+# Returns a list with $variable_type (character vector) and $baseline_category (integer vector),
+# both of length p, as required by bgms.
+get_blume_capel_spec <- function(options, data) {
+  vars <- options[["variables"]]
+  p <- length(vars)
+
+  v_types <- rep("ordinal", p)
+  baseline_categories <- rep(1L, p)
+  names(baseline_categories) <- vars
+
+  if (length(options[["variablesBlumeCapel"]]) > 0) {
+    bc_names  <- vapply(options[["variablesBlumeCapel"]], `[[`, character(1L), "variable")
+    bc_levels <- vapply(options[["variablesBlumeCapel"]], `[[`, character(1L), "levels")
+
+    for (j in seq_along(bc_names)) {
+      v_types[match(bc_names[j], vars)] <- "blume-capel"
+      idx <- match(bc_levels[j], levels(data[[bc_names[j]]]))
+      if (is.na(idx)) {
+        .quitAnalysis(gettextf(
+          "The selected baseline category '%1$s' for Blume-Capel variable '%2$s' does not exist in the data.",
+          bc_levels[j], bc_names[j]
+        ))
+      }
+      baseline_categories[bc_names[j]] <- idx
+    }
+  }
+
+  list(variable_type = v_types, baseline_category = baseline_categories)
 }
